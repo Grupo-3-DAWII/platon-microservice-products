@@ -33,7 +33,7 @@ class ApiExceptionHandlerTest {
         assertThat(handler.handleDataIntegrity(request()).getStatus()).isEqualTo(409);
         assertThat(handler.handleTypeMismatch(new MethodArgumentTypeMismatchException(
                 "abc", Integer.class, "page", null, null), request()).getStatus()).isEqualTo(400);
-        assertThat(handler.handleMalformedJson(new HttpMessageNotReadableException("invalid", null), request())
+        assertThat(handler.handleMalformedJson(new HttpMessageNotReadableException("invalid", (Throwable) null), request())
                 .getStatus()).isEqualTo(400);
     }
 

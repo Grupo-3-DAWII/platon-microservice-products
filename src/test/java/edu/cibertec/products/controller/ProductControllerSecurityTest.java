@@ -55,7 +55,10 @@ class ProductControllerSecurityTest {
 
     @Test
     void shouldAllowAdminToWriteProducts() throws Exception {
-        String body = "{\"name\":\"Don Quijote\",\"stock\":5}";
+        String body = "{\"name\":\"Don Quijote\",\"isbn\":\"978-612-00-0001-1\",\"author\":\"Miguel de Cervantes\","
+                + "\"editorialId\":1,\"genreId\":1,\"publicationYear\":1605,"
+                + "\"description\":\"Las aventuras del ingenioso hidalgo.\","
+                + "\"purchasePrice\":80.00,\"profitMargin\":60.00,\"active\":true,\"stock\":5}";
         when(productService.create(any())).thenReturn(response());
         when(productService.update(any(), any())).thenReturn(response());
         doNothing().when(productService).delete(1L);
@@ -85,6 +88,9 @@ class ProductControllerSecurityTest {
     }
 
     private ProductResponse response() {
-        return new ProductResponse(1L, "Don Quijote", 5, true);
+        return new ProductResponse(1L, "Don Quijote", "978-612-00-0001-1", "Miguel de Cervantes",
+                1L, "Alfaguara", 1L, "Novela", 1605, "Las aventuras del ingenioso hidalgo.",
+                null, null, new java.math.BigDecimal("80.00"), new java.math.BigDecimal("60.00"),
+                new java.math.BigDecimal("128.00"), true, 5, true);
     }
 }

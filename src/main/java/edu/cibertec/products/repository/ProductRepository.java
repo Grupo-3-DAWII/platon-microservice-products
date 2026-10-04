@@ -12,5 +12,9 @@ public interface ProductRepository extends ListCrudRepository<Product, Long>, Pa
 
     boolean existsByNameIgnoreCaseAndIdProductNot(String name, Long idProduct);
 
+    boolean existsByIsbnIgnoreCase(String isbn);
+
+    boolean existsByIsbnIgnoreCaseAndIdProductNot(String isbn, Long idProduct);
+
     Page<Product> findByNameContainingIgnoreCase(String name, Pageable pageable);
 }
