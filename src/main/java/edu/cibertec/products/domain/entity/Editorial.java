@@ -21,4 +21,7 @@ public class Editorial {
 
     @Column("name")
     private String name;
+
+    @Column("active")
+    private boolean active;
 }
