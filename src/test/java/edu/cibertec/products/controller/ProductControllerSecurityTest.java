@@ -4,11 +4,12 @@ import edu.cibertec.products.config.SecurityConfig;
 import edu.cibertec.products.config.WebConfig;
 import edu.cibertec.products.dto.PageResponse;
 import edu.cibertec.products.dto.ProductResponse;
+import edu.cibertec.products.dto.ProductSummaryResponse;
 import edu.cibertec.products.service.ProductService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.web.servlet.MockMvc;
@@ -33,7 +34,7 @@ class ProductControllerSecurityTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private ProductService productService;
 
     @Test
@@ -58,7 +59,7 @@ class ProductControllerSecurityTest {
         String body = "{\"name\":\"Don Quijote\",\"isbn\":\"978-612-00-0001-1\",\"author\":\"Miguel de Cervantes\","
                 + "\"editorialId\":1,\"genreId\":1,\"publicationYear\":1605,"
                 + "\"description\":\"Las aventuras del ingenioso hidalgo.\","
-                + "\"purchasePrice\":80.00,\"profitMargin\":60.00,\"active\":true,\"stock\":5}";
+                + "\"image\":\"https://example.com/book.png\",\"purchasePrice\":80.00,\"profitMargin\":60.00,\"active\":true}";
         when(productService.create(any())).thenReturn(response());
         when(productService.update(any(), any())).thenReturn(response());
         doNothing().when(productService).delete(1L);
@@ -83,14 +84,16 @@ class ProductControllerSecurityTest {
                 .andExpect(status().isBadRequest());
     }
 
-    private PageResponse<ProductResponse> page() {
-        return new PageResponse<>(List.of(response()), 0, 20, 1, 1, true, true);
+    private PageResponse<ProductSummaryResponse> page() {
+        return new PageResponse<>(List.of(new ProductSummaryResponse(1L, "Don Quijote", "Miguel de Cervantes",
+                "Alfaguara", "Novela", "https://example.com/book.png", new java.math.BigDecimal("128.00"),
+                5, true, true)), 0, 20, 1, 1, true, true);
     }
 
     private ProductResponse response() {
         return new ProductResponse(1L, "Don Quijote", "978-612-00-0001-1", "Miguel de Cervantes",
                 1L, "Alfaguara", 1L, "Novela", 1605, "Las aventuras del ingenioso hidalgo.",
-                null, null, new java.math.BigDecimal("80.00"), new java.math.BigDecimal("60.00"),
-                new java.math.BigDecimal("128.00"), true, 5, true);
+                "https://example.com/book.png", new java.math.BigDecimal("80.00"), new java.math.BigDecimal("60.00"),
+                new java.math.BigDecimal("128.00"), true, 5, true, null, null, null);
     }
 }

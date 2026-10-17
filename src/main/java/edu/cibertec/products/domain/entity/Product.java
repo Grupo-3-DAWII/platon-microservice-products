@@ -9,6 +9,7 @@ import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -42,11 +43,8 @@ public class Product {
     @Column("description")
     private String description;
 
-    @Column("image_data")
-    private byte[] image;
-
-    @Column("image_content_type")
-    private String imageContentType;
+    @Column("image_url")
+    private String imageUrl;
 
     @Column("purchase_price")
     private BigDecimal purchasePrice;
@@ -62,4 +60,10 @@ public class Product {
 
     @Column("stock")
     private Integer stock;
+
+    @Column("created_at")
+    private LocalDateTime createdAt;
+
+    @Column("updated_at")
+    private LocalDateTime updatedAt;
 }
