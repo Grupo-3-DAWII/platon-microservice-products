@@ -18,7 +18,7 @@ class ProductMapperTest {
         mapper.updateEntity(product, request("Don Quijote Updated", 0));
 
         assertThat(product.getName()).isEqualTo("Don Quijote Updated");
-        assertThat(product.getStock()).isZero();
+        assertThat(product.getStock()).isNull();
     }
 
     @Test
@@ -59,20 +59,20 @@ class ProductMapperTest {
     @Test
     void shouldCopyImageValues() {
         ProductRequest request = new ProductRequest("Don Quijote", "978-612-00-0001-1", "Miguel de Cervantes",
-                1L, 1L, 1605, "Las aventuras del ingenioso hidalgo.", new byte[]{1, 2}, "image/png",
-                new java.math.BigDecimal("80.00"), new java.math.BigDecimal("60.00"), true, 5);
+                1L, 1L, 1605, "Las aventuras del ingenioso hidalgo.", "https://example.com/book.png",
+                new java.math.BigDecimal("80.00"), new java.math.BigDecimal("60.00"), true);
 
         Product product = mapper.toEntity(request);
         mapper.updateEntity(product, request);
         ProductResponse response = mapper.toResponse(product, "Alfaguara", "Novela");
 
-        assertThat(product.getImage()).containsExactly(1, 2);
-        assertThat(response.image()).containsExactly(1, 2);
+        assertThat(product.getImageUrl()).isEqualTo("https://example.com/book.png");
+        assertThat(response.image()).isEqualTo("https://example.com/book.png");
     }
 
     private ProductRequest request(String name, Integer stock) {
         return new ProductRequest(name, "978-612-00-0001-1", "Miguel de Cervantes",
-                1L, 1L, 1605, "Las aventuras del ingenioso hidalgo.", null, null,
-                new java.math.BigDecimal("80.00"), new java.math.BigDecimal("60.00"), true, stock);
+                1L, 1L, 1605, "Las aventuras del ingenioso hidalgo.", null,
+                new java.math.BigDecimal("80.00"), new java.math.BigDecimal("60.00"), true);
     }
 }

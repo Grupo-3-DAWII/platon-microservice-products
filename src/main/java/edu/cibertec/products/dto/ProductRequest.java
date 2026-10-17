@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Pattern;
 
 import java.math.BigDecimal;
 
@@ -17,11 +18,9 @@ public record ProductRequest(
         @NotNull Long genreId,
         @NotNull @Min(1) @Max(3000) Integer publicationYear,
         @NotBlank @Size(max = 2000) String description,
-        byte[] image,
-        @Size(max = 100) String imageContentType,
+        @Size(max = 1000) @Pattern(regexp = "^$|https?://.*", message = "image must be a valid HTTP URL") String image,
         @NotNull @DecimalMin("0.00") BigDecimal purchasePrice,
         @NotNull @DecimalMin("0.00") BigDecimal profitMargin,
-        Boolean active,
-        @NotNull @Min(0) Integer stock
+        Boolean active
 ) {
 }

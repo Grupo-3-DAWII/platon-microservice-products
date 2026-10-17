@@ -3,11 +3,12 @@ package edu.cibertec.products.service;
 import edu.cibertec.products.dto.PageResponse;
 import edu.cibertec.products.dto.ProductRequest;
 import edu.cibertec.products.dto.ProductResponse;
+import edu.cibertec.products.dto.ProductSummaryResponse;
 import org.springframework.data.domain.Pageable;
 
 public interface ProductService {
 
-    PageResponse<ProductResponse> findAll(Pageable pageable, String search);
+    PageResponse<ProductSummaryResponse> findAll(Pageable pageable, String search);
 
     ProductResponse findById(Long id);
 

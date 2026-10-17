@@ -6,12 +6,14 @@ import edu.cibertec.products.domain.entity.Genre;
 import edu.cibertec.products.dto.PageResponse;
 import edu.cibertec.products.dto.ProductRequest;
 import edu.cibertec.products.dto.ProductResponse;
+import edu.cibertec.products.dto.ProductSummaryResponse;
 import edu.cibertec.products.exception.DuplicateResourceException;
 import edu.cibertec.products.exception.ResourceNotFoundException;
 import edu.cibertec.products.mapper.ProductMapper;
 import edu.cibertec.products.repository.ProductRepository;
 import edu.cibertec.products.repository.EditorialRepository;
 import edu.cibertec.products.repository.GenreRepository;
+import edu.cibertec.products.repository.StockMovementRepository;
 import edu.cibertec.products.service.impl.ProductServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,6 +50,9 @@ class ProductServiceTest {
     @Mock
     private GenreRepository genreRepository;
 
+    @Mock
+    private StockMovementRepository stockMovementRepository;
+
     @Spy
     private ProductMapper productMapper = Mappers.getMapper(ProductMapper.class);
 
@@ -61,9 +66,9 @@ class ProductServiceTest {
         when(productRepository.findAll(any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(product), PageRequest.of(0, 20), 1));
 
-        PageResponse<ProductResponse> response = productService.findAll(PageRequest.of(0, 20), null);
+        PageResponse<ProductSummaryResponse> response = productService.findAll(PageRequest.of(0, 20), null);
 
-        assertThat(response.content()).extracting(ProductResponse::name).containsExactly("Don Quijote");
+        assertThat(response.content()).extracting(ProductSummaryResponse::name).containsExactly("Don Quijote");
         assertThat(response.content().get(0).available()).isTrue();
     }
 
@@ -99,7 +104,7 @@ class ProductServiceTest {
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
         when(productRepository.save(product)).thenReturn(product);
 
-        assertThat(productService.update(1L, request("Updated", 0)).available()).isFalse();
+        assertThat(productService.update(1L, request("Updated", 0)).available()).isTrue();
     }
 
     @Test
@@ -148,8 +153,8 @@ class ProductServiceTest {
         when(productRepository.save(any(Product.class))).thenReturn(saved);
 
         ProductRequest request = new ProductRequest("Don Quijote", "978-612-00-0001-1", "Miguel de Cervantes",
-                1L, 1L, 1605, "Las aventuras del ingenioso hidalgo.", null, null,
-                new BigDecimal("80.00"), new BigDecimal("60.00"), null, 5);
+                1L, 1L, 1605, "Las aventuras del ingenioso hidalgo.", null,
+                new BigDecimal("80.00"), new BigDecimal("60.00"), null);
 
         assertThat(productService.create(request).active()).isTrue();
     }
@@ -192,8 +197,8 @@ class ProductServiceTest {
 
     private ProductRequest request(String name, Integer stock) {
         return new ProductRequest(name, "978-612-00-0001-1", "Miguel de Cervantes",
-                1L, 1L, 1605, "Las aventuras del ingenioso hidalgo.", null, null,
-                new BigDecimal("80.00"), new BigDecimal("60.00"), true, stock);
+                1L, 1L, 1605, "Las aventuras del ingenioso hidalgo.", null,
+                new BigDecimal("80.00"), new BigDecimal("60.00"), true);
     }
 
     private Product product(Long id, String name, Integer stock) {

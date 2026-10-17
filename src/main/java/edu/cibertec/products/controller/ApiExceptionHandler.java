@@ -2,6 +2,7 @@ package edu.cibertec.products.controller;
 
 import edu.cibertec.products.exception.DuplicateResourceException;
 import edu.cibertec.products.exception.ResourceNotFoundException;
+import edu.cibertec.products.exception.InsufficientStockException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -27,6 +28,11 @@ public class ApiExceptionHandler {
     @ExceptionHandler(DuplicateResourceException.class)
     ProblemDetail handleDuplicate(DuplicateResourceException exception, HttpServletRequest request) {
         return problem(HttpStatus.CONFLICT, "DUPLICATE_RESOURCE", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(InsufficientStockException.class)
+    ProblemDetail handleInsufficientStock(InsufficientStockException exception, HttpServletRequest request) {
+        return problem(HttpStatus.CONFLICT, "INSUFFICIENT_STOCK", exception.getMessage(), request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

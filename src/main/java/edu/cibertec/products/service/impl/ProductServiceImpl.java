@@ -4,6 +4,10 @@ import edu.cibertec.products.domain.entity.Product;
 import edu.cibertec.products.dto.PageResponse;
 import edu.cibertec.products.dto.ProductRequest;
 import edu.cibertec.products.dto.ProductResponse;
+import edu.cibertec.products.dto.ProductSummaryResponse;
+import edu.cibertec.products.dto.StockMovementResponse;
+import edu.cibertec.products.domain.entity.StockMovement;
+import edu.cibertec.products.repository.StockMovementRepository;
 import edu.cibertec.products.exception.DuplicateResourceException;
 import edu.cibertec.products.exception.ResourceNotFoundException;
 import edu.cibertec.products.mapper.ProductMapper;
@@ -30,13 +34,14 @@ public class ProductServiceImpl implements ProductService {
     private final ProductMapper productMapper;
     private final EditorialRepository editorialRepository;
     private final GenreRepository genreRepository;
+    private final StockMovementRepository stockMovementRepository;
 
     @Override
-    public PageResponse<ProductResponse> findAll(Pageable pageable, String search) {
+    public PageResponse<ProductSummaryResponse> findAll(Pageable pageable, String search) {
         Page<Product> productPage = Objects.isNull(search) || search.isBlank()
                 ? productRepository.findAll(pageable)
                 : productRepository.findByNameContainingIgnoreCase(search.trim(), pageable);
-        Page<ProductResponse> responsePage = productPage.map(this::toResponse);
+        Page<ProductSummaryResponse> responsePage = productPage.map(this::toSummary);
 
         return new PageResponse<>(responsePage.getContent(), responsePage.getNumber(), responsePage.getSize(),
                 responsePage.getTotalElements(), responsePage.getTotalPages(), responsePage.isFirst(), responsePage.isLast());
@@ -44,7 +49,13 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductResponse findById(Long id) {
-        return toResponse(findProduct(id));
+        Product product = findProduct(id);
+        ProductResponse response = toResponse(product);
+        return new ProductResponse(response.idProduct(), response.name(), response.isbn(), response.author(),
+                response.editorialId(), response.editorial(), response.genreId(), response.genre(),
+                response.publicationYear(), response.description(), response.image(), response.purchasePrice(),
+                response.profitMargin(), response.salePrice(), response.active(), response.stock(), response.available(),
+                response.createdAt(), response.updatedAt(), latestMovement(id));
     }
 
     @Override
@@ -53,8 +64,12 @@ public class ProductServiceImpl implements ProductService {
         ProductRequest normalizedRequest = normalize(request);
         ensureUnique(normalizedRequest, null);
         Product product = productMapper.toEntity(normalizedRequest);
+        product.setStock(0);
+        product.setCreatedAt(java.time.LocalDateTime.now());
+        product.setUpdatedAt(product.getCreatedAt());
         applyCatalogAndPrice(product, normalizedRequest);
-        return toResponse(productRepository.save(product));
+        Product saved = productRepository.save(product);
+        return toResponse(saved);
     }
 
     @Override
@@ -64,6 +79,7 @@ public class ProductServiceImpl implements ProductService {
         ProductRequest normalizedRequest = normalize(request);
         ensureUnique(normalizedRequest, id);
         productMapper.updateEntity(product, normalizedRequest);
+        product.setUpdatedAt(java.time.LocalDateTime.now());
         applyCatalogAndPrice(product, normalizedRequest);
         return toResponse(productRepository.save(product));
     }
@@ -97,8 +113,7 @@ public class ProductServiceImpl implements ProductService {
     private ProductRequest normalize(ProductRequest request) {
         return new ProductRequest(request.name().trim(), request.isbn().trim(), request.author().trim(),
                 request.editorialId(), request.genreId(), request.publicationYear(), request.description().trim(),
-                request.image(), request.imageContentType(), request.purchasePrice(), request.profitMargin(),
-                request.active(), request.stock());
+                request.image(), request.purchasePrice(), request.profitMargin(), request.active());
     }
 
     private void applyCatalogAndPrice(Product product, ProductRequest request) {
@@ -117,11 +132,28 @@ public class ProductServiceImpl implements ProductService {
         return purchasePrice.multiply(multiplier).setScale(2, RoundingMode.HALF_UP);
     }
 
+    private ProductSummaryResponse toSummary(Product product) {
+        String editorialName = editorialRepository.findById(product.getIdEditorial()).map(Editorial -> Editorial.getName()).orElse(null);
+        String genreName = genreRepository.findById(product.getIdGenre()).map(Genre -> Genre.getName()).orElse(null);
+        return productMapper.toSummary(product, editorialName, genreName);
+    }
+
     private ProductResponse toResponse(Product product) {
         String editorialName = editorialRepository.findById(product.getIdEditorial())
                 .map(editorial -> editorial.getName()).orElse(null);
         String genreName = genreRepository.findById(product.getIdGenre())
                 .map(genre -> genre.getName()).orElse(null);
         return productMapper.toResponse(product, editorialName, genreName);
+    }
+
+    private StockMovementResponse latestMovement(Long productId) {
+        return stockMovementRepository.findFirstByIdProductOrderByMovementDateDescIdMovementDesc(productId)
+                .map(this::toMovementResponse).orElse(null);
+    }
+
+    private StockMovementResponse toMovementResponse(StockMovement movement) {
+        return new StockMovementResponse(movement.getIdMovement(), movement.getIdProduct(), movement.getType(),
+                movement.getQuantity(), movement.getMovementDate(), movement.getResultingStock(), movement.getNotes(),
+                movement.getCreatedAt());
     }
 }

@@ -1,6 +1,7 @@
 package edu.cibertec.products.dto;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public record ProductResponse(
         Long idProduct,
@@ -13,13 +14,15 @@ public record ProductResponse(
         String genre,
         Integer publicationYear,
         String description,
-        byte[] image,
-        String imageContentType,
+        String image,
         BigDecimal purchasePrice,
         BigDecimal profitMargin,
         BigDecimal salePrice,
         Boolean active,
         Integer stock,
-        boolean available
+        boolean available,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt,
+        StockMovementResponse lastMovement
 ) {
 }

@@ -3,6 +3,7 @@ package edu.cibertec.products.controller;
 import edu.cibertec.products.dto.PageResponse;
 import edu.cibertec.products.dto.ProductRequest;
 import edu.cibertec.products.dto.ProductResponse;
+import edu.cibertec.products.dto.ProductSummaryResponse;
 import edu.cibertec.products.service.ProductService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,7 +33,7 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping
-    public PageResponse<ProductResponse> findAll(
+    public PageResponse<ProductSummaryResponse> findAll(
             @PageableDefault(size = 20, sort = "idProduct") Pageable pageable,
             @RequestParam(required = false) String search) {
         return productService.findAll(pageable, search);
