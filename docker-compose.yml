@@ -4,6 +4,9 @@ services:
       context: .
     container_name: platon-products-api
     restart: unless-stopped
+    # depends_on:
+    #   db:
+    #     condition: service_healthy
     environment:
       DB_URL: jdbc:postgresql://host.docker.internal:5432/account_db?currentSchema=products
       DB_USERNAME: account_user
@@ -15,3 +18,26 @@ services:
       - "host.docker.internal:host-gateway"
     ports:
       - "${APP_PORT}:8081"
+
+  # db:
+  #   image: postgres:16-alpine
+  #   container_name: platon-products-db
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_DB: ${POSTGRES_DB}
+  #     POSTGRES_USER: ${POSTGRES_USER}
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  #   ports:
+  #     - "${POSTGRES_PORT}:5432"
+  #   volumes:
+  #     - products_postgres_data:/var/lib/postgresql/data
+  #     - ../DATABASE/products-standalone/01-create-products-schema.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+  #     - ../DATABASE/init/05-products-stock-deduction.sql:/docker-entrypoint-initdb.d/005-purchase-stock.sql:ro
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 10
+
+# volumes:
+#   products_postgres_data:
