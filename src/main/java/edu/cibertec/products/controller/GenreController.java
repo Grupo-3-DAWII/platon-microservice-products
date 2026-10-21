@@ -7,45 +7,40 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
 @SecurityRequirement(name = "basicAuth")
+@RequestMapping({"/api/products/genres", "/api/v1/products/genres"})
 @Tag(name = "Genres", description = "Genre catalog management")
 public class GenreController {
 
     private final GenreService genreService;
 
-    @GetMapping({"/api/genres", "/api/v1/genres"})
+    @GetMapping()
     public List<CatalogResponse> findAll() {
         return genreService.findAll();
     }
 
-    @GetMapping({"/api/genres/{id}", "/api/v1/genres/{id}"})
+    @GetMapping("/{id}")
     public CatalogResponse findById(@PathVariable Long id) {
         return genreService.findById(id);
     }
 
-    @PostMapping({"/api/genres", "/api/v1/genres"})
+    @PostMapping()
     public CatalogResponse create(@Valid @RequestBody CatalogRequest request) {
         return genreService.create(request);
     }
 
-    @PutMapping({"/api/genres/{id}", "/api/v1/genres/{id}"})
+    @PutMapping("/{id}")
     public CatalogResponse update(@PathVariable Long id, @Valid @RequestBody CatalogRequest request) {
         return genreService.update(id, request);
     }
 
-    @DeleteMapping({"/api/genres/{id}", "/api/v1/genres/{id}"})
+    @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         genreService.delete(id);
     }
