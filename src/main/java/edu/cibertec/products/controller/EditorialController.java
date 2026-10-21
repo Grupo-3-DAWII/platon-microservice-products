@@ -25,27 +25,27 @@ public class EditorialController {
 
     private final EditorialService editorialService;
 
-    @GetMapping("/api/editorials")
+    @GetMapping({"/api/editorials", "/api/v1/editorials"})
     public List<CatalogResponse> findAll() {
         return editorialService.findAll();
     }
 
-    @GetMapping("/api/editorials/{id}")
+    @GetMapping({"/api/editorials/{id}", "/api/v1/editorials/{id}"})
     public CatalogResponse findById(@PathVariable Long id) {
         return editorialService.findById(id);
     }
 
-    @PostMapping("/api/editorials")
+    @PostMapping({"/api/editorials", "/api/v1/editorials"})
     public CatalogResponse create(@Valid @RequestBody CatalogRequest request) {
         return editorialService.create(request);
     }
 
-    @PutMapping("/api/editorials/{id}")
+    @PutMapping({"/api/editorials/{id}", "/api/v1/editorials/{id}"})
     public CatalogResponse update(@PathVariable Long id, @Valid @RequestBody CatalogRequest request) {
         return editorialService.update(id, request);
     }
 
-    @DeleteMapping("/api/editorials/{id}")
+    @DeleteMapping({"/api/editorials/{id}", "/api/v1/editorials/{id}"})
     public void delete(@PathVariable Long id) {
         editorialService.delete(id);
     }

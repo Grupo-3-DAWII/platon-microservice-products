@@ -4,7 +4,8 @@ import edu.cibertec.products.domain.entity.Product;
 import edu.cibertec.products.dto.PageResponse;
 import edu.cibertec.products.dto.ProductRequest;
 import edu.cibertec.products.dto.ProductResponse;
-import edu.cibertec.products.dto.ProductSummaryResponse;
+import edu.cibertec.products.dto.ProductDetailResponse;
+
 import edu.cibertec.products.dto.StockMovementResponse;
 import edu.cibertec.products.domain.entity.StockMovement;
 import edu.cibertec.products.repository.StockMovementRepository;
@@ -37,25 +38,72 @@ public class ProductServiceImpl implements ProductService {
     private final StockMovementRepository stockMovementRepository;
 
     @Override
-    public PageResponse<ProductSummaryResponse> findAll(Pageable pageable, String search) {
-        Page<Product> productPage = Objects.isNull(search) || search.isBlank()
-                ? productRepository.findAll(pageable)
-                : productRepository.findByNameContainingIgnoreCase(search.trim(), pageable);
-        Page<ProductSummaryResponse> responsePage = productPage.map(this::toSummary);
+    public PageResponse<ProductResponse> findAll(Pageable pageable, String search) {
+        return findAll(pageable, search, null, null);
+    }
+
+    @Override
+    public PageResponse<ProductResponse> findAll(Pageable pageable, String search, Integer maxStock, Boolean active) {
+        if (maxStock != null && maxStock < 0) {
+            throw new IllegalArgumentException("maxStock must be greater than or equal to 0");
+        }
+        String name = search == null || search.isBlank() ? null : search.trim();
+        Page<Product> productPage = findFiltered(pageable, name, maxStock, active);
+        Page<ProductResponse> responsePage = productPage.map(this::toResponseWithMovement);
 
         return new PageResponse<>(responsePage.getContent(), responsePage.getNumber(), responsePage.getSize(),
                 responsePage.getTotalElements(), responsePage.getTotalPages(), responsePage.isFirst(), responsePage.isLast());
     }
 
+    private Page<Product> findFiltered(Pageable pageable, String name, Integer maxStock, Boolean active) {
+        if (maxStock != null && active != null) {
+            return name == null
+                    ? productRepository.findByStockLessThanEqualAndActive(maxStock, active, pageable)
+                    : productRepository.findByNameContainingIgnoreCaseAndStockLessThanEqualAndActive(name, maxStock, active, pageable);
+        }
+        if (maxStock != null) {
+            return name == null
+                    ? productRepository.findByStockLessThanEqual(maxStock, pageable)
+                    : productRepository.findByNameContainingIgnoreCaseAndStockLessThanEqual(name, maxStock, pageable);
+        }
+        if (active != null) {
+            return name == null
+                    ? productRepository.findByActive(active, pageable)
+                    : productRepository.findByNameContainingIgnoreCaseAndActive(name, active, pageable);
+        }
+        return name == null ? productRepository.findAll(pageable)
+                : productRepository.findByNameContainingIgnoreCase(name, pageable);
+    }
     @Override
     public ProductResponse findById(Long id) {
-        Product product = findProduct(id);
+        return toResponseWithMovement(findProduct(id));
+    }
+
+    private ProductResponse toResponseWithMovement(Product product) {
         ProductResponse response = toResponse(product);
         return new ProductResponse(response.idProduct(), response.name(), response.isbn(), response.author(),
                 response.editorialId(), response.editorial(), response.genreId(), response.genre(),
                 response.publicationYear(), response.description(), response.image(), response.purchasePrice(),
                 response.profitMargin(), response.salePrice(), response.active(), response.stock(), response.available(),
-                response.createdAt(), response.updatedAt(), latestMovement(id));
+                response.createdAt(), response.updatedAt(), latestMovement(product.getIdProduct()));
+    }
+
+    @Override
+    public ProductDetailResponse findDetailById(Long id) {
+        return toDetailResponse(toResponse(findProduct(id)));
+    }
+
+    @Override
+    @Transactional
+    public ProductDetailResponse updateDetail(Long id, ProductRequest request) {
+        return toDetailResponse(update(id, request));
+    }
+
+    private ProductDetailResponse toDetailResponse(ProductResponse product) {
+        return new ProductDetailResponse(product.name(), product.isbn(), product.author(),
+                product.editorial(), product.genre(), product.publicationYear(), product.description(),
+                product.image(), product.purchasePrice(), product.salePrice(),
+                product.createdAt(), product.updatedAt(), product.active());
     }
 
     @Override
@@ -130,12 +178,6 @@ public class ProductServiceImpl implements ProductService {
     private BigDecimal calculateSalePrice(BigDecimal purchasePrice, BigDecimal profitMargin) {
         BigDecimal multiplier = BigDecimal.ONE.add(profitMargin.divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP));
         return purchasePrice.multiply(multiplier).setScale(2, RoundingMode.HALF_UP);
-    }
-
-    private ProductSummaryResponse toSummary(Product product) {
-        String editorialName = editorialRepository.findById(product.getIdEditorial()).map(Editorial -> Editorial.getName()).orElse(null);
-        String genreName = genreRepository.findById(product.getIdGenre()).map(Genre -> Genre.getName()).orElse(null);
-        return productMapper.toSummary(product, editorialName, genreName);
     }
 
     private ProductResponse toResponse(Product product) {

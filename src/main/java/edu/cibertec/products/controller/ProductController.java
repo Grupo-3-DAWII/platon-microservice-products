@@ -3,11 +3,13 @@ package edu.cibertec.products.controller;
 import edu.cibertec.products.dto.PageResponse;
 import edu.cibertec.products.dto.ProductRequest;
 import edu.cibertec.products.dto.ProductResponse;
-import edu.cibertec.products.dto.ProductSummaryResponse;
+import edu.cibertec.products.dto.ProductDetailResponse;
+
 import edu.cibertec.products.service.ProductService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +26,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping({"/api/products", "/api/v1/products"})
 @RequiredArgsConstructor
 @Tag(name = "Products", description = "Product catalog and stock management")
 @SecurityRequirement(name = "basicAuth")
@@ -33,15 +35,20 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping
-    public PageResponse<ProductSummaryResponse> findAll(
+    public PageResponse<ProductResponse> findAll(
             @PageableDefault(size = 20, sort = "idProduct") Pageable pageable,
-            @RequestParam(required = false) String search) {
-        return productService.findAll(pageable, search);
+            @RequestParam(required = false) String search, @RequestParam(required = false) @Min(0) Integer maxStock, @RequestParam(required = false) Boolean active) {
+        return productService.findAll(pageable, search, maxStock, active);
     }
 
     @GetMapping("/{id}")
     public ProductResponse findById(@PathVariable Long id) {
         return productService.findById(id);
+    }
+
+    @GetMapping("/{id}/detail")
+    public ProductDetailResponse findDetailById(@PathVariable Long id) {
+        return productService.findDetailById(id);
     }
 
     @PostMapping
@@ -52,6 +59,11 @@ public class ProductController {
     @PutMapping("/{id}")
     public ProductResponse update(@PathVariable Long id, @Valid @RequestBody ProductRequest request) {
         return productService.update(id, request);
+    }
+
+    @PutMapping("/{id}/detail")
+    public ProductDetailResponse updateDetail(@PathVariable Long id, @Valid @RequestBody ProductRequest request) {
+        return productService.updateDetail(id, request);
     }
 
     @DeleteMapping("/{id}")

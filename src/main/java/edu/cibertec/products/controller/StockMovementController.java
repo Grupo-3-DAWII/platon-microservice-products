@@ -18,7 +18,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/products/{productId}/stock-movements")
+@RequestMapping({"/api/products/{productId}/stock-movements", "/api/v1/products/{productId}/stock-movements"})
 public class StockMovementController {
 
     private final StockMovementService stockMovementService;

@@ -25,27 +25,27 @@ public class GenreController {
 
     private final GenreService genreService;
 
-    @GetMapping("/api/genres")
+    @GetMapping({"/api/genres", "/api/v1/genres"})
     public List<CatalogResponse> findAll() {
         return genreService.findAll();
     }
 
-    @GetMapping("/api/genres/{id}")
+    @GetMapping({"/api/genres/{id}", "/api/v1/genres/{id}"})
     public CatalogResponse findById(@PathVariable Long id) {
         return genreService.findById(id);
     }
 
-    @PostMapping("/api/genres")
+    @PostMapping({"/api/genres", "/api/v1/genres"})
     public CatalogResponse create(@Valid @RequestBody CatalogRequest request) {
         return genreService.create(request);
     }
 
-    @PutMapping("/api/genres/{id}")
+    @PutMapping({"/api/genres/{id}", "/api/v1/genres/{id}"})
     public CatalogResponse update(@PathVariable Long id, @Valid @RequestBody CatalogRequest request) {
         return genreService.update(id, request);
     }
 
-    @DeleteMapping("/api/genres/{id}")
+    @DeleteMapping({"/api/genres/{id}", "/api/v1/genres/{id}"})
     public void delete(@PathVariable Long id) {
         genreService.delete(id);
     }

@@ -6,7 +6,7 @@ import edu.cibertec.products.domain.entity.Genre;
 import edu.cibertec.products.dto.PageResponse;
 import edu.cibertec.products.dto.ProductRequest;
 import edu.cibertec.products.dto.ProductResponse;
-import edu.cibertec.products.dto.ProductSummaryResponse;
+
 import edu.cibertec.products.exception.DuplicateResourceException;
 import edu.cibertec.products.exception.ResourceNotFoundException;
 import edu.cibertec.products.mapper.ProductMapper;
@@ -41,6 +41,59 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ProductServiceTest {
 
+    @Test
+    void shouldUpdateDetailPreservingStockAndCreationDate() {
+        Product product = product(1L, "Don Quijote", 5);
+        var createdAt = java.time.LocalDateTime.of(2026, 1, 1, 0, 0);
+        product.setCreatedAt(createdAt);
+        stubCatalog();
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        when(productRepository.save(product)).thenReturn(product);
+
+        var detail = productService.updateDetail(1L, request("Updated", 0));
+
+        assertThat(detail.name()).isEqualTo("Updated");
+        assertThat(detail.salePrice()).isEqualByComparingTo("128.00");
+        assertThat(detail.createdAt()).isEqualTo(createdAt);
+        assertThat(detail.updatedAt()).isAfter(createdAt);
+        assertThat(product.getStock()).isEqualTo(5);
+        verify(productRepository).save(product);
+        org.mockito.Mockito.verifyNoInteractions(stockMovementRepository);
+    }
+
+    @Test
+    void shouldRejectUpdatingMissingProductDetail() {
+        when(productRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> productService.updateDetail(999L, request()))
+                .isInstanceOf(ResourceNotFoundException.class);
+        verify(productRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldFindDetailWithoutLoadingStockMovements() {
+        Product product = product(1L, "Don Quijote", 5);
+        stubCatalog();
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+
+        var detail = productService.findDetailById(1L);
+
+        assertThat(detail.name()).isEqualTo("Don Quijote");
+        assertThat(detail.editorial()).isEqualTo("Alfaguara");
+        assertThat(detail.genre()).isEqualTo("Novela");
+        assertThat(detail.purchasePrice()).isEqualTo(product.getPurchasePrice());
+        assertThat(detail.salePrice()).isEqualTo(product.getSalePrice());
+        org.mockito.Mockito.verifyNoInteractions(stockMovementRepository);
+    }
+
+    @Test
+    void shouldRejectMissingProductDetail() {
+        when(productRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> productService.findDetailById(999L))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
     @Mock
     private ProductRepository productRepository;
 
@@ -66,9 +119,9 @@ class ProductServiceTest {
         when(productRepository.findAll(any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(product), PageRequest.of(0, 20), 1));
 
-        PageResponse<ProductSummaryResponse> response = productService.findAll(PageRequest.of(0, 20), null);
+        PageResponse<ProductResponse> response = productService.findAll(PageRequest.of(0, 20), null);
 
-        assertThat(response.content()).extracting(ProductSummaryResponse::name).containsExactly("Don Quijote");
+        assertThat(response.content()).extracting(ProductResponse::name).containsExactly("Don Quijote");
         assertThat(response.content().get(0).available()).isTrue();
     }
 
@@ -191,6 +244,49 @@ class ProductServiceTest {
                 .isInstanceOf(DuplicateResourceException.class);
     }
 
+    @Test
+    void shouldCombineStockActiveAndSearchFilters() {
+        Pageable pageable = PageRequest.of(0, 20);
+        PageImpl<Product> empty = new PageImpl<>(List.of(), pageable, 0);
+        when(productRepository.findByStockLessThanEqual(0, pageable)).thenReturn(empty);
+        when(productRepository.findByActive(false, pageable)).thenReturn(empty);
+        when(productRepository.findByStockLessThanEqualAndActive(5, true, pageable)).thenReturn(empty);
+        when(productRepository.findByNameContainingIgnoreCaseAndStockLessThanEqual("book", 5, pageable)).thenReturn(empty);
+        when(productRepository.findByNameContainingIgnoreCaseAndActive("book", true, pageable)).thenReturn(empty);
+        when(productRepository.findByNameContainingIgnoreCaseAndStockLessThanEqualAndActive("book", 0, true, pageable)).thenReturn(empty);
+
+        assertThat(productService.findAll(pageable, null, 0, null).totalElements()).isZero();
+        assertThat(productService.findAll(pageable, null, null, false).totalElements()).isZero();
+        assertThat(productService.findAll(pageable, null, 5, true).totalElements()).isZero();
+        assertThat(productService.findAll(pageable, " book ", 5, null).totalElements()).isZero();
+        assertThat(productService.findAll(pageable, "book", null, true).totalElements()).isZero();
+        assertThat(productService.findAll(pageable, "book", 0, true).totalElements()).isZero();
+        assertThatThrownBy(() -> productService.findAll(pageable, null, -1, null))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+    @Test
+    void shouldIncludeFullDetailsAndLatestMovementInProductList() {
+        Product product = product(1L, "Don Quijote", 5);
+        java.time.LocalDateTime updatedAt = java.time.LocalDateTime.of(2026, 10, 19, 12, 0);
+        product.setUpdatedAt(updatedAt);
+        product.setCreatedAt(updatedAt.minusDays(1));
+        stubCatalog();
+        when(productRepository.findAll(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(product), PageRequest.of(0, 20), 1));
+        when(stockMovementRepository.findFirstByIdProductOrderByMovementDateDescIdMovementDesc(1L))
+                .thenReturn(Optional.of(edu.cibertec.products.domain.entity.StockMovement.builder()
+                        .idMovement(10L).idProduct(1L).quantity(5).resultingStock(5).movementDate(updatedAt).build()));
+
+        ProductResponse response = productService.findAll(PageRequest.of(0, 20), null).content().get(0);
+
+        assertThat(response.updatedAt()).isEqualTo(updatedAt);
+        assertThat(response.createdAt()).isEqualTo(updatedAt.minusDays(1));
+        assertThat(response.lastMovement().idMovement()).isEqualTo(10L);
+        assertThat(response.isbn()).isEqualTo(product.getIsbn());
+        assertThat(response.purchasePrice()).isEqualByComparingTo("80.00");
+        assertThat(response.editorial()).isEqualTo("Alfaguara");
+        assertThat(response.genre()).isEqualTo("Novela");
+    }
     private ProductRequest request() {
         return request("Don Quijote", 5);
     }

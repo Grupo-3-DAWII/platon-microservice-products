@@ -23,6 +23,18 @@ public interface ProductRepository extends ListCrudRepository<Product, Long>, Pa
 
     Page<Product> findByNameContainingIgnoreCase(String name, Pageable pageable);
 
+    Page<Product> findByStockLessThanEqual(Integer maxStock, Pageable pageable);
+
+    Page<Product> findByActive(Boolean active, Pageable pageable);
+
+    Page<Product> findByStockLessThanEqualAndActive(Integer maxStock, Boolean active, Pageable pageable);
+
+    Page<Product> findByNameContainingIgnoreCaseAndStockLessThanEqual(String name, Integer maxStock, Pageable pageable);
+
+    Page<Product> findByNameContainingIgnoreCaseAndActive(String name, Boolean active, Pageable pageable);
+
+    Page<Product> findByNameContainingIgnoreCaseAndStockLessThanEqualAndActive(
+            String name, Integer maxStock, Boolean active, Pageable pageable);
     @Query("SELECT * FROM product WHERE idproduct = :productId FOR UPDATE")
     Optional<Product> findByIdForUpdate(@Param("productId") Long productId);
 

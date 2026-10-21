@@ -32,4 +32,5 @@ target/
 
 # Local environment
 .env
+.local-db.yml
 replay_pid*
